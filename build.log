@@ -1,0 +1,184 @@
+yarn run v1.22.22
+$ cd ios && /opt/homebrew/opt/ruby/bin/bundle exec fastlane build
+/Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/actions/app_store_build_number.rb:1: warning: ostruct was loaded from the standard library, but will no longer be part of the default gems starting from Ruby 3.5.0.
+You can add ostruct to your Gemfile or gemspec to silence this warning.
+[17:19:27]: [32m------------------------------[0m
+[17:19:27]: [32m--- Step: default_platform ---[0m
+[17:19:27]: [32m------------------------------[0m
+[17:19:27]: [32mDriving the lane 'ios build' 🚀[0m
+[17:19:27]: [32m-------------------[0m
+[17:19:27]: [32m--- Step: match ---[0m
+[17:19:27]: [32m-------------------[0m
+[17:19:27]: [32mSuccessfully loaded '/Users/abhishek/Documents/GitHub/FastlaneApp/ios/fastlane/Matchfile' 📄[0m
+
++-----------------------------------------------------+
+|     Detected Values from './fastlane/Matchfile'     |
++--------------+--------------------------------------+
+| git_url      | https://github.com/Abhishek18m/fast  |
+|              | laneApp.git                          |
+| storage_mode | git                                  |
+| type         | development                          |
++--------------+--------------------------------------+
+
+
++-----------------------------------------------------------------------------+
+|                          [32mSummary for match 2.229.1[0m                          |
++--------------------------------------+--------------------------------------+
+| type                                 | appstore                             |
+| readonly                             | false                                |
+| generate_apple_certs                 | true                                 |
+| skip_provisioning_profiles           | false                                |
+| app_identifier                       | ["com.fastlaneApp.app"]              |
+| username                             | appledeveloper@ditstek.com           |
+| storage_mode                         | git                                  |
+| git_url                              | https://github.com/Abhishek18m/fast  |
+|                                      | laneApp.git                          |
+| git_branch                           | master                               |
+| shallow_clone                        | false                                |
+| clone_branch_directly                | false                                |
+| skip_google_cloud_account_confirmat  | false                                |
+| ion                                  |                                      |
+| s3_skip_encryption                   | false                                |
+| gitlab_host                          | https://gitlab.com                   |
+| keychain_name                        | login.keychain                       |
+| force                                | false                                |
+| force_for_new_devices                | false                                |
+| include_mac_in_profiles              | false                                |
+| include_all_certificates             | false                                |
+| force_for_new_certificates           | false                                |
+| skip_confirmation                    | false                                |
+| safe_remove_certs                    | false                                |
+| skip_docs                            | false                                |
+| platform                             | ios                                  |
+| derive_catalyst_app_identifier       | false                                |
+| fail_on_name_taken                   | false                                |
+| skip_certificate_matching            | false                                |
+| skip_set_partition_list              | false                                |
+| force_legacy_encryption              | false                                |
+| verbose                              | false                                |
++--------------------------------------+--------------------------------------+
+
+[17:19:27]: Cloning remote git repo...
+[17:19:27]: If cloning the repo takes too long, you can use the `clone_branch_directly` option in match.
+[17:19:28]: Checking out branch master...
+[17:19:28]: [32m🔓  Successfully decrypted certificates repo[0m
+[17:19:28]: Verifying that the certificate and profile are still valid on the Dev Portal...
+Multiple teams found on the Developer Portal, Your Terminal is running in non-interactive mode! Cannot continue from here.
+Please check that you set FASTLANE_TEAM_ID or FASTLANE_TEAM_NAME to the right value.
+Available Teams:
+1) 63VBS4F99X "Alternatives, Inc." (Company/Organization)
+2) SA75FK2LP2 "BG Summit, LLC" (Company/Organization)
+3) LT6628367L "Benefit Assistance Corporation" (Company/Organization)
+4) J74CY4W6F8 "CAREHALO CORPORATION" (Company/Organization)
+5) 4ZG4W6X3QH "CommandHub Solutions, LLC" (Company/Organization)
+6) M25VSWY86X "Digital Sportsman, LLC" (Company/Organization)
+7) SWDT88G8UG "Dinesh Kumar" (Individual)
+8) 9569KPT9W2 "Expy Health" (Company/Organization)
+9) AA2P2MTH68 "Forest County Potawatomi Community" (Company/Organization)
+10) 47DAN3SWCL "Gulf South Risk Managers, Ltd." (Company/Organization)
+11) 4PKJZB4358 "Happy Whole Human Inc" (Company/Organization)
+12) T99JZ65RM8 "Health Economics Partners, LLC" (Company/Organization)
+13) 82F7YVV7GB "Musync Limited Liability Company" (Company/Organization)
+14) 65NTTFAAKG "Sellout, Inc" (Company/Organization)
+15) U638NB8SRN "Studio Bookings Online, LLC" (Company/Organization)
+16) PQ9XCURG9J "Virtare Health, Inc." (Company/Organization)
+17) W8RQNSMJ35 "Waterlake Pty Ltd" (Company/Organization)
+18) 376ZYNM5A7 "Zumlo Inc" (Company/Organization)
+19) 9YXYXHMYU8 "Zumlo, LLC" (Company/Organization)
++------------------------------+
+|         [33mLane Context[0m         |
++------------------+-----------+
+| DEFAULT_PLATFORM | ios       |
+| PLATFORM_NAME    | ios       |
+| LANE_NAME        | ios build |
++------------------+-----------+
+[17:19:30]: [31mCalled from Fastfile at line 14[0m
+[17:19:30]: [31m```[0m
+[17:19:30]: [31m    12:	  desc "Build the IPA (without uploading)"[0m
+[17:19:30]: [31m    13:	  lane :build do[0m
+[17:19:30]: [31m => 14:	    match(type: "appstore")[0m
+[17:19:30]: [31m    15:	    build_app([0m
+[17:19:30]: [31m    16:	      workspace: "FastlaneApp.xcworkspace",[0m
+[17:19:30]: [31m```[0m
+[17:19:30]: [31mMultiple Teams found; unable to choose, terminal not interactive![0m
+
++---------------------------------------+
+|           [32mfastlane summary[0m            |
++------+------------------+-------------+
+| Step | Action           | Time (in s) |
++------+------------------+-------------+
+| 1    | default_platform | 0           |
+| 💥   | [31mmatch[0m            | 3           |
++------+------------------+-------------+
+
+[17:19:30]: [31mfastlane finished with errors[0m
+
+Looking for related GitHub issues on fastlane/fastlane...
+
+➡️  [33mSpaceauth fails with "Verification codes can’t be sent to this phone number at this time. Please try again later."[0m
+    https://github.com/fastlane/fastlane/issues/28816 [[31mopen[0m] 51 💬
+    2 days ago
+
+➡️  [33mitc_team_id/itc_team_name in Appfile ignored when using FASTLANE_SESSION -> "Multiple Teams found; unable to choose"[0m
+    https://github.com/fastlane/fastlane/issues/18322 [[32mclosed[0m] 9 💬
+    13 Mar 2022
+
+➡️  [33mITC Team ID specified in AppFile isn't being passed to connect_api; now I get "Multiple Teams found; unable to choose"[0m
+    https://github.com/fastlane/fastlane/issues/17371 [[32mclosed[0m] 22 💬
+    18 Feb 2021
+
+and 4 more at: https://github.com/fastlane/fastlane/search?q=Multiple%20Teams%20found%3B%20unable%20to%20choose%2C%20terminal%20not%20interactive%21&type=Issues&utf8=✓
+
+🔗  You can ⌘ + double-click on links to open them directly in your browser.
+bundler: failed to load command: fastlane (/Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/bin/fastlane)
+/Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/spaceship/lib/spaceship/portal/ui/select_team.rb:97:in 'Spaceship::Client::UserInterface#select_team': [31m[!] Multiple Teams found; unable to choose, terminal not interactive![0m (RuntimeError)
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/spaceship/lib/spaceship/portal/portal_client.rb:73:in 'Spaceship::PortalClient#select_team'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/spaceship/lib/spaceship/connect_api/client.rb:68:in 'Spaceship::ConnectAPI::Client.login'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/spaceship/lib/spaceship/connect_api/spaceship.rb:85:in 'Spaceship::ConnectAPI.login'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/match/lib/match/spaceship_ensure.rb:35:in 'Match::SpaceshipEnsure#initialize'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/match/lib/match/runner.rb:58:in 'Class#new'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/match/lib/match/runner.rb:58:in 'Match::Runner#run'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/actions/sync_code_signing.rb:19:in 'Fastlane::Actions::SyncCodeSigningAction.run'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:263:in 'block (2 levels) in Fastlane::Runner#execute_action'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/actions/actions_helper.rb:69:in 'Fastlane::Actions.execute_action'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:255:in 'block in Fastlane::Runner#execute_action'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:229:in 'Dir.chdir'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:229:in 'Fastlane::Runner#execute_action'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:157:in 'Fastlane::Runner#trigger_action_by_name'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/fast_file.rb:159:in 'Fastlane::FastFile#method_missing'
+	from Fastfile:14:in 'block (2 levels) in Fastlane::FastFile#parsing_binding'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/lane.rb:41:in 'Fastlane::Lane#call'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:49:in 'block in Fastlane::Runner#execute'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:45:in 'Dir.chdir'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/runner.rb:45:in 'Fastlane::Runner#execute'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/lane_manager.rb:46:in 'Fastlane::LaneManager.cruise_lane'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/command_line_handler.rb:34:in 'Fastlane::CommandLineHandler.handle'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/commands_generator.rb:110:in 'block (2 levels) in Fastlane::CommandsGenerator#run'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/commander-4.6.0/lib/commander/command.rb:187:in 'Commander::Command#call'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/commander-4.6.0/lib/commander/command.rb:157:in 'Commander::Command#run'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/commander-4.6.0/lib/commander/runner.rb:444:in 'Commander::Runner#run_active_command'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane_core/lib/fastlane_core/ui/fastlane_runner.rb:124:in 'Commander::Runner#run!'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/commander-4.6.0/lib/commander/delegates.rb:18:in 'Commander::Delegates#run!'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/commands_generator.rb:363:in 'Fastlane::CommandsGenerator#run'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/commands_generator.rb:43:in 'Fastlane::CommandsGenerator.start'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/fastlane/lib/fastlane/cli_tools_distributor.rb:123:in 'Fastlane::CLIToolsDistributor.take_off'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/gems/fastlane-2.229.1/bin/fastlane:23:in '<top (required)>'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/bin/fastlane:25:in 'Kernel#load'
+	from /Users/abhishek/Documents/GitHub/FastlaneApp/vendor/bundle/ruby/3.4.0/bin/fastlane:25:in '<top (required)>'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/cli/exec.rb:59:in 'Kernel.load'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/cli/exec.rb:59:in 'Bundler::CLI::Exec#kernel_load'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/cli/exec.rb:23:in 'Bundler::CLI::Exec#run'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/cli.rb:456:in 'Bundler::CLI#exec'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/cli.rb:29:in 'Bundler::CLI.start'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/exe/bundle:28:in 'block in <top (required)>'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/lib/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+	from /opt/homebrew/lib/ruby/gems/3.4.0/gems/bundler-2.7.2/exe/bundle:20:in '<top (required)>'
+	from /opt/homebrew/opt/ruby/bin/bundle:25:in 'Kernel#load'
+	from /opt/homebrew/opt/ruby/bin/bundle:25:in '<main>'
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

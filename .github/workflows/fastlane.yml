@@ -1,0 +1,52 @@
+name: Fastlane Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.6'
+          bundler-cache: true
+          
+      - name: Install dependencies
+        run: bundle install
+        working-directory: ./ios
+        
+      - name: Build iOS
+        run: bundle exec fastlane beta
+        working-directory: ./ios
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.6'
+          bundler-cache: true
+          
+      - name: Install dependencies
+        run: bundle install
+        working-directory: ./android
+        
+      - name: Build Android
+        run: bundle exec fastlane beta
+        working-directory: ./android
+        env:
+          JSON_KEY_DATA: ${{ secrets.JSON_KEY_DATA }}

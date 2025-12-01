@@ -40,6 +40,14 @@ jobs:
           cd ios
           bundle install
 
+      - name: Configure Git for Match
+        if: secrets.MATCH_GIT_BASIC_AUTHORIZATION != ''
+        run: |
+          DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
+          git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+        env:
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -49,6 +57,14 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
+      - name: Configure Git for Match (PRs)
+        if: github.event_name == 'pull_request' && secrets.MATCH_GIT_BASIC_AUTHORIZATION != ''
+        run: |
+          DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
+          git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+        env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
       - name: Build only (for PRs)

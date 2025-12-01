@@ -214,7 +214,7 @@ jobs:
         run: |
           cd ios
 
-          # CRITICAL: Ensure .xcode.env.local exists with correct Node.js path
+          # CRITICAL: Ensure .xcode.env.local exists with correct Node.js path and REACT_NATIVE_PATH
           echo "🔍 Setting up .xcode.env.local..."
           NODE_PATH=$(which node)
           if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
@@ -223,9 +223,22 @@ jobs:
             exit 1
           fi
 
-          # Create/update .xcode.env.local
+          # Get REACT_NATIVE_PATH
+          if [ -d "../node_modules/react-native" ]; then
+            REACT_NATIVE_PATH="$(cd ../node_modules/react-native && pwd)"
+            echo "✅ Found React Native at: $REACT_NATIVE_PATH"
+          else
+            echo "❌ ERROR: node_modules/react-native not found!"
+            exit 1
+          fi
+
+          # Create/update .xcode.env.local with both NODE_BINARY and REACT_NATIVE_PATH
+          # This file is sourced by Xcode build scripts, so both variables will be available
           echo "export NODE_BINARY=$NODE_PATH" > .xcode.env.local
-          echo "✅ Created .xcode.env.local with NODE_BINARY=$NODE_PATH"
+          echo "export REACT_NATIVE_PATH=$REACT_NATIVE_PATH" >> .xcode.env.local
+          echo "✅ Created .xcode.env.local with:"
+          echo "   NODE_BINARY=$NODE_PATH"
+          echo "   REACT_NATIVE_PATH=$REACT_NATIVE_PATH"
 
           # Verify it's correct
           echo "📝 .xcode.env.local contents:"
@@ -267,14 +280,16 @@ jobs:
           # Also export NODE_BINARY to environment so Xcode scripts can access it
           export NODE_BINARY
 
-          # Set REACT_NATIVE_PATH explicitly (required by React Native bundling script)
-          if [ -d "../node_modules/react-native" ]; then
-            export REACT_NATIVE_PATH="$(cd ../node_modules/react-native && pwd)"
-            echo "✅ REACT_NATIVE_PATH set to: $REACT_NATIVE_PATH"
-          else
-            echo "❌ ERROR: node_modules/react-native not found!"
+          # Source .xcode.env.local to get REACT_NATIVE_PATH (already set above)
+          source .xcode.env.local
+
+          # Verify REACT_NATIVE_PATH is set
+          if [ -z "$REACT_NATIVE_PATH" ]; then
+            echo "❌ ERROR: REACT_NATIVE_PATH not set in .xcode.env.local!"
             exit 1
           fi
+
+          echo "✅ REACT_NATIVE_PATH is set to: $REACT_NATIVE_PATH"
 
           # Verify React Native scripts exist
           if [ ! -f "$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh" ]; then
@@ -286,6 +301,9 @@ jobs:
             exit 1
           fi
           echo "✅ React Native scripts found"
+
+          # Export REACT_NATIVE_PATH to environment (for Fastlane)
+          export REACT_NATIVE_PATH
 
           bundle exec fastlane beta || {
             echo ""

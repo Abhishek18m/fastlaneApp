@@ -76,4 +76,24 @@ platform :ios do
       skip_submission: true
     )
   end
+
+  desc "Check status of latest TestFlight build"
+  lane :status do
+    # Get the latest build number from TestFlight
+    begin
+      latest_build = latest_testflight_build_number(
+        app_identifier: "com.fastlaneApp.app"
+      )
+      UI.success "✅ Latest build number in TestFlight: #{latest_build}"
+    rescue => ex
+      UI.important "Could not fetch latest build number: #{ex.message}"
+    end
+    
+    # Get current build number from project
+    current_build = get_build_number(xcodeproj: "FastlaneApp.xcodeproj")
+    UI.message "📦 Current build number in project: #{current_build}"
+    
+    UI.success "💡 To see detailed build status, check App Store Connect:"
+    UI.message "   https://appstoreconnect.apple.com/apps"
+  end
 end

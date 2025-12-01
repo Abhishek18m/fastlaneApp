@@ -30,15 +30,42 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Setup Node path for Xcode
+        run: |
+          # Create .xcode.env.local with Node path for CI
+          NODE_PATH=$(which node)
+          echo "NODE_BINARY=$NODE_PATH" > ios/.xcode.env.local
+          echo "Created .xcode.env.local with NODE_BINARY=$NODE_PATH"
+          cat ios/.xcode.env.local
+
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          pod install
+          pod install --repo-update
 
       - name: Install Fastlane dependencies
         run: |
           cd ios
           bundle install
+
+      - name: Select Xcode version
+        run: |
+          # List available Xcode versions
+          echo "Available Xcode versions:"
+          ls -la /Applications/ | grep -i xcode || echo "No Xcode found in /Applications/"
+
+          # Use the default Xcode (usually Xcode.app, not Xcode_16.4.app)
+          if [ -d "/Applications/Xcode.app" ]; then
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+            echo "Selected: Xcode.app"
+          elif [ -d "/Applications/Xcode_16.4.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+            echo "Selected: Xcode_16.4.app (fallback)"
+          fi
+
+          xcodebuild -version
+          xcodebuild -showsdks
+          echo "Xcode path: $(xcode-select -p)"
 
       - name: Configure Git for Match (Project-specific)
         run: |
@@ -57,13 +84,54 @@ jobs:
 
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: build_upload
         run: |
           cd ios
-          bundle exec fastlane beta
+          bundle exec fastlane beta || {
+            echo "Build failed. Showing build logs:"
+            if [ -d "./build_logs" ]; then
+              find ./build_logs -name "*.log" -exec tail -100 {} \;
+            fi
+            exit 1
+          }
+
+          # Extract build number from project file
+          BUILD_NUMBER=$(grep -A 1 "CURRENT_PROJECT_VERSION" FastlaneApp.xcodeproj/project.pbxproj | grep -o '[0-9]\+' | head -1)
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Build $BUILD_NUMBER uploaded successfully to TestFlight"
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
+      - name: Check Build Status
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build_upload.outcome == 'success'
+        run: |
+          cd ios
+          echo "📊 Checking build status..."
+          bundle exec fastlane status || echo "Status check completed (build may still be processing)"
+        env:
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+
+      - name: Build Status Summary
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build_upload.outcome == 'success'
+        run: |
+          echo "## 🚀 iOS Build Upload Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Build Uploaded Successfully**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Number:** ${{ steps.build_upload.outputs.build_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Uploaded to TestFlight (processing...)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Wait 5-30 minutes for Apple to process the build" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check build status in [App Store Connect](https://appstoreconnect.apple.com/apps)" >> $GITHUB_STEP_SUMMARY
+          echo "3. You'll receive an email when processing is complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip:** Run \`fastlane status\` locally to check build status anytime" >> $GITHUB_STEP_SUMMARY
 
       - name: Configure Git for Match (PRs - Project-specific)
         if: github.event_name == 'pull_request'

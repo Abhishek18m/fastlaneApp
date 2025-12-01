@@ -39,6 +39,14 @@ Build the IPA (without uploading)
 
 Upload existing IPA to TestFlight
 
+### ios status
+
+```sh
+[bundle exec] fastlane ios status
+```
+
+Check status of latest TestFlight build
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

@@ -1,0 +1,55 @@
+name: Check Build Status
+
+on:
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+  schedule:
+    # Run every hour to check build status
+    - cron: '0 * * * *'
+
+jobs:
+  check-status:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Fastlane dependencies
+        run: |
+          cd ios
+          bundle install
+
+      - name: Check TestFlight Build Status
+        run: |
+          cd ios
+          echo "📊 Checking TestFlight build status..."
+          bundle exec fastlane status
+        env:
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+
+      - name: Build Status Summary
+        run: |
+          echo "## 📱 TestFlight Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Status check completed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the logs above for detailed build information." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [App Store Connect](https://appstoreconnect.apple.com/apps)" >> $GITHUB_STEP_SUMMARY
+          echo "- [TestFlight Dashboard](https://appstoreconnect.apple.com/apps)" >> $GITHUB_STEP_SUMMARY
+

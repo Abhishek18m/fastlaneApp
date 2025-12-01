@@ -41,10 +41,11 @@ jobs:
           bundle install
 
       - name: Configure Git for Match
-        if: secrets.MATCH_GIT_BASIC_AUTHORIZATION != ''
         run: |
-          DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
-          git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+          if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
+            DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
+            git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+          fi
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
@@ -60,10 +61,12 @@ jobs:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
       - name: Configure Git for Match (PRs)
-        if: github.event_name == 'pull_request' && secrets.MATCH_GIT_BASIC_AUTHORIZATION != ''
+        if: github.event_name == 'pull_request'
         run: |
-          DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
-          git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+          if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
+            DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
+            git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+          fi
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 

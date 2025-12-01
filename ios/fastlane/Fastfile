@@ -4,18 +4,41 @@ platform :ios do
   desc "Push a new beta build to TestFlight"
   lane :beta do
     match(type: "appstore")
+    update_code_signing_settings(
+      use_automatic_signing: true,
+      path: "FastlaneApp.xcodeproj",
+      team_id: "SWDT88G8UG"
+    )
     increment_build_number(xcodeproj: "FastlaneApp.xcodeproj")
-    build_app(workspace: "FastlaneApp.xcworkspace", scheme: "FastlaneApp")
+    build_app(
+      workspace: "FastlaneApp.xcworkspace",
+      scheme: "FastlaneApp",
+      export_method: "app-store",
+      disable_xcpretty: true
+    )
     upload_to_testflight
   end
 
   desc "Build the IPA (without uploading)"
   lane :build do
-    match(type: "appstore")
+    match(type: "adhoc")
+    update_code_signing_settings(
+      use_automatic_signing: true,
+      path: "FastlaneApp.xcodeproj",
+      team_id: "SWDT88G8UG"
+    )
     build_app(
       workspace: "FastlaneApp.xcworkspace",
       scheme: "FastlaneApp",
+      export_method: "ad-hoc",
       disable_xcpretty: true
+    )
+  end
+
+  desc "Upload existing IPA to TestFlight"
+  lane :upload do
+    upload_to_testflight(
+      ipa: "FastlaneApp.ipa"
     )
   end
 end

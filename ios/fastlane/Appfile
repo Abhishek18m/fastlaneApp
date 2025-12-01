@@ -1,5 +1,6 @@
 app_identifier "com.fastlaneApp.app" # The bundle identifier of your app
 apple_id "appledeveloper@ditstek.com" # Your Apple email address
-
+team_id "SWDT88G8UG"  # Your Apple team ID
+itc_team_id "122953061"  # App Store Connect Team ID (Dinesh Kumar)
 # For more information about the Appfile, see:
 #     https://docs.fastlane.tools/advanced/#appfile

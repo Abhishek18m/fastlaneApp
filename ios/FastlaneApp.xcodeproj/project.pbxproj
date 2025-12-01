@@ -182,7 +182,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
+			shellScript = "set -e\n\n# Source .xcode.env files to get NODE_BINARY and REACT_NATIVE_PATH\nif [ -f \"$SRCROOT/.xcode.env\" ]; then\n  source \"$SRCROOT/.xcode.env\"\nfi\nif [ -f \"$SRCROOT/.xcode.env.local\" ]; then\n  source \"$SRCROOT/.xcode.env.local\"\nfi\n\n# Detect REACT_NATIVE_PATH if not set\nif [ -z \"$REACT_NATIVE_PATH\" ]; then\n  # Try to find react-native relative to SRCROOT (ios directory)\n  if [ -d \"$SRCROOT/../node_modules/react-native\" ]; then\n    REACT_NATIVE_PATH=\"$(cd \"$SRCROOT/../node_modules/react-native\" && pwd)\"\n  fi\nfi\n\n# Verify REACT_NATIVE_PATH is set\nif [ -z \"$REACT_NATIVE_PATH\" ]; then\n  echo \"Error: REACT_NATIVE_PATH is not set. Please set it in .xcode.env.local\" >&2\n  exit 1\nfi\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n# Verify scripts exist\nif [ ! -f \"$WITH_ENVIRONMENT\" ]; then\n  echo \"Error: React Native with-environment.sh not found at $WITH_ENVIRONMENT\" >&2\n  exit 1\nfi\n\nif [ ! -f \"$REACT_NATIVE_XCODE\" ]; then\n  echo \"Error: React Native react-native-xcode.sh not found at $REACT_NATIVE_XCODE\" >&2\n  exit 1\nfi\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
 		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;

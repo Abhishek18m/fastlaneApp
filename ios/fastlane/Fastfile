@@ -3,7 +3,20 @@ default_platform(:ios)
 platform :ios do
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    match(type: "appstore")
+    # Use App Store Connect API Key for authentication (required for CI/CD)
+    api_key = nil
+    if ENV["APP_STORE_CONNECT_KEY_ID"] && ENV["APP_STORE_CONNECT_ISSUER_ID"]
+      api_key = app_store_connect_api_key(
+        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+        key_content: ENV["APP_STORE_CONNECT_KEY_CONTENT"],
+        key_filepath: ENV["APP_STORE_CONNECT_KEY_FILEPATH"]
+      )
+      match(type: "appstore", api_key: api_key)
+    else
+      # Fallback to username/password for local development
+      match(type: "appstore")
+    end
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "FastlaneApp.xcodeproj",
@@ -16,15 +29,36 @@ platform :ios do
       export_method: "app-store",
       disable_xcpretty: true
     )
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true,
-      skip_submission: true
-    )
+    # Upload to TestFlight using API Key if available, otherwise use App-Specific Password
+    if api_key
+      upload_to_testflight(
+        api_key: api_key,
+        skip_waiting_for_build_processing: true,
+        skip_submission: true
+      )
+    else
+      upload_to_testflight(
+        skip_waiting_for_build_processing: true,
+        skip_submission: true
+      )
+    end
   end
 
   desc "Build the IPA (without uploading)"
   lane :build do
-    match(type: "adhoc")
+    # Use App Store Connect API Key for authentication (required for CI/CD)
+    if ENV["APP_STORE_CONNECT_KEY_ID"] && ENV["APP_STORE_CONNECT_ISSUER_ID"]
+      api_key = app_store_connect_api_key(
+        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+        key_content: ENV["APP_STORE_CONNECT_KEY_CONTENT"],
+        key_filepath: ENV["APP_STORE_CONNECT_KEY_FILEPATH"]
+      )
+      match(type: "adhoc", api_key: api_key)
+    else
+      # Fallback to username/password for local development
+      match(type: "adhoc")
+    end
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "FastlaneApp.xcodeproj",

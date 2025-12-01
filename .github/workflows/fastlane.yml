@@ -55,6 +55,16 @@ jobs:
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
+      - name: Setup App Store Connect API Key
+        run: |
+          if [ -n "$APP_STORE_CONNECT_KEY_CONTENT" ]; then
+            echo "$APP_STORE_CONNECT_KEY_CONTENT" > /tmp/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+            echo "App Store Connect API Key file created"
+          fi
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
+
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -62,7 +72,10 @@ jobs:
           bundle exec fastlane beta
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_FILEPATH: /tmp/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
@@ -80,6 +93,17 @@ jobs:
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
+      - name: Setup App Store Connect API Key (PRs)
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -n "$APP_STORE_CONNECT_KEY_CONTENT" ]; then
+            echo "$APP_STORE_CONNECT_KEY_CONTENT" > /tmp/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+            echo "App Store Connect API Key file created"
+          fi
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
+
       - name: Build only (for PRs)
         if: github.event_name == 'pull_request'
         run: |
@@ -87,6 +111,10 @@ jobs:
           bundle exec fastlane build
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_FILEPATH: /tmp/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
   android:

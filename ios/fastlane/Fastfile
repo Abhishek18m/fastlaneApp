@@ -16,7 +16,10 @@ platform :ios do
       export_method: "app-store",
       disable_xcpretty: true
     )
-    upload_to_testflight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
   end
 
   desc "Build the IPA (without uploading)"
@@ -38,7 +41,9 @@ platform :ios do
   desc "Upload existing IPA to TestFlight"
   lane :upload do
     upload_to_testflight(
-      ipa: "FastlaneApp.ipa"
+      ipa: "FastlaneApp.ipa",
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
     )
   end
 end

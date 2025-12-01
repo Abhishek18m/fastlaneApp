@@ -7,46 +7,109 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   ios:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: ruby/setup-ruby@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.6'
+          ruby-version: '3.0'
           bundler-cache: true
-          
-      - name: Install dependencies
-        run: bundle install
-        working-directory: ./ios
-        
-      - name: Build iOS
-        run: bundle exec fastlane beta
-        working-directory: ./ios
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+
+      - name: Install Fastlane dependencies
+        run: |
+          cd ios
+          bundle install
+
+      - name: Build and Upload iOS
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cd ios
+          bundle exec fastlane beta
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-          
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
+      - name: Build only (for PRs)
+        if: github.event_name == 'pull_request'
+        run: |
+          cd ios
+          bundle exec fastlane build
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: ruby/setup-ruby@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.6'
+          ruby-version: '3.0'
           bundler-cache: true
-          
-      - name: Install dependencies
-        run: bundle install
-        working-directory: ./android
-        
-      - name: Build Android
-        run: bundle exec fastlane beta
-        working-directory: ./android
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Fastlane dependencies
+        run: |
+          cd android
+          bundle install
+
+      - name: Decode service account key
+        run: |
+          echo "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}" > $HOME/google-play-service-account.json
         env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+
+      - name: Build and Upload Android
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cd android
+          bundle exec fastlane beta
+        env:
+          SUPPLY_JSON_KEY: $HOME/google-play-service-account.json
           JSON_KEY_DATA: ${{ secrets.JSON_KEY_DATA }}
+
+      - name: Build only (for PRs)
+        if: github.event_name == 'pull_request'
+        run: |
+          cd android
+          bundle exec fastlane build

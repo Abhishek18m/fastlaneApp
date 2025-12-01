@@ -28,7 +28,21 @@ jobs:
           cache: 'npm'
 
       - name: Install Node dependencies
-        run: npm ci
+        run: |
+          npm ci
+          echo "✅ Node.js dependencies installed"
+          echo "🔍 Verifying React Native installation:"
+          if [ -d "node_modules/react-native" ]; then
+            echo "✅ React Native found at: $(cd node_modules/react-native && pwd)"
+            if [ -f "node_modules/react-native/scripts/xcode/with-environment.sh" ]; then
+              echo "✅ React Native scripts found"
+            else
+              echo "⚠️  WARNING: React Native scripts not found"
+            fi
+          else
+            echo "❌ ERROR: React Native not found in node_modules"
+            exit 1
+          fi
 
       - name: Setup Node path for Xcode
         run: |
@@ -251,6 +265,31 @@ jobs:
           
           # Also export NODE_BINARY to environment so Xcode scripts can access it
           export NODE_BINARY
+          
+          # Set REACT_NATIVE_PATH explicitly (required by React Native bundling script)
+          if [ -d "../node_modules/react-native" ]; then
+            export REACT_NATIVE_PATH="$(cd ../node_modules/react-native && pwd)"
+            echo "✅ REACT_NATIVE_PATH set to: $REACT_NATIVE_PATH"
+          else
+            echo "⚠️  WARNING: node_modules/react-native not found, REACT_NATIVE_PATH not set"
+          fi
+          
+          # Skip network operations in CI to prevent hangs
+          export CI=true
+          export SKIP_BUNDLING=false
+          
+          # Verify React Native scripts exist
+          if [ -n "$REACT_NATIVE_PATH" ]; then
+            if [ ! -f "$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh" ]; then
+              echo "❌ ERROR: React Native with-environment.sh not found at $REACT_NATIVE_PATH/scripts/xcode/"
+              exit 1
+            fi
+            if [ ! -f "$REACT_NATIVE_PATH/scripts/react-native-xcode.sh" ]; then
+              echo "❌ ERROR: React Native react-native-xcode.sh not found at $REACT_NATIVE_PATH/scripts/"
+              exit 1
+            fi
+            echo "✅ React Native scripts found"
+          fi
 
           bundle exec fastlane beta || {
             echo ""

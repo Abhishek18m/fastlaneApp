@@ -100,6 +100,29 @@ platform :ios do
       xcargs: "-allowProvisioningUpdates"
     }
     
+    # In CI, set environment variables for React Native bundling script
+    if is_ci
+      # Set REACT_NATIVE_PATH if not already set
+      react_native_path = File.expand_path("../../node_modules/react-native", __dir__)
+      if Dir.exist?(react_native_path)
+        ENV["REACT_NATIVE_PATH"] = react_native_path
+        UI.message "✅ REACT_NATIVE_PATH set to: #{react_native_path}"
+      else
+        UI.important "⚠️  WARNING: React Native not found at #{react_native_path}"
+      end
+      
+      # Ensure NODE_BINARY is set from .xcode.env.local
+      xcode_env_local = File.expand_path(".xcode.env.local", __dir__)
+      if File.exist?(xcode_env_local)
+        env_content = File.read(xcode_env_local)
+        if env_content =~ /NODE_BINARY=(.+)/
+          node_binary = $1.strip
+          ENV["NODE_BINARY"] = node_binary
+          UI.message "✅ NODE_BINARY set to: #{node_binary}"
+        end
+      end
+    end
+    
     # In CI, add export_options with provisioning profile from Match for export phase
     if is_ci && provisioning_profile_name
       UI.message "✅ Using provisioning profile in export_options: #{provisioning_profile_name}"

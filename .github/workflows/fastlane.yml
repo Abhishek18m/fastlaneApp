@@ -43,8 +43,15 @@ jobs:
       - name: Configure Git for Match
         run: |
           if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
+            echo "MATCH_GIT_BASIC_AUTHORIZATION is set (length: ${#MATCH_GIT_BASIC_AUTHORIZATION})"
             DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
+            echo "https://${DECODED_AUTH}@github.com" > ~/.git-credentials
+            git config --global credential.helper store
             git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+            echo "Git credentials configured successfully"
+          else
+            echo "ERROR: MATCH_GIT_BASIC_AUTHORIZATION is not set. Please add it to GitHub Secrets."
+            exit 1
           fi
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
@@ -65,7 +72,12 @@ jobs:
         run: |
           if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
             DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
+            echo "https://${DECODED_AUTH}@github.com" > ~/.git-credentials
+            git config --global credential.helper store
             git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
+            echo "Git credentials configured"
+          else
+            echo "Warning: MATCH_GIT_BASIC_AUTHORIZATION not set"
           fi
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}

@@ -3,20 +3,12 @@ default_platform(:ios)
 platform :ios do
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    # Use App Store Connect API Key for authentication (required for CI/CD)
-    api_key = nil
-    if ENV["APP_STORE_CONNECT_KEY_ID"] && ENV["APP_STORE_CONNECT_ISSUER_ID"]
-      api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-        key_content: ENV["APP_STORE_CONNECT_KEY_CONTENT"],
-        key_filepath: ENV["APP_STORE_CONNECT_KEY_FILEPATH"]
-      )
-      match(type: "appstore", api_key: api_key)
-    else
-      # Fallback to username/password for local development
-      match(type: "appstore")
-    end
+    # Use Match in readonly mode - downloads certificates from git without Apple authentication
+    # This only works if certificates are already in your Match git repository
+    match(
+      type: "appstore",
+      readonly: true  # Only download from git, don't sync with Apple
+    )
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "FastlaneApp.xcodeproj",
@@ -29,36 +21,20 @@ platform :ios do
       export_method: "app-store",
       disable_xcpretty: true
     )
-    # Upload to TestFlight using API Key if available, otherwise use App-Specific Password
-    if api_key
-      upload_to_testflight(
-        api_key: api_key,
-        skip_waiting_for_build_processing: true,
-        skip_submission: true
-      )
-    else
-      upload_to_testflight(
-        skip_waiting_for_build_processing: true,
-        skip_submission: true
-      )
-    end
+    # Upload to TestFlight using App-Specific Password (no API Key needed)
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
   end
 
   desc "Build the IPA (without uploading)"
   lane :build do
-    # Use App Store Connect API Key for authentication (required for CI/CD)
-    if ENV["APP_STORE_CONNECT_KEY_ID"] && ENV["APP_STORE_CONNECT_ISSUER_ID"]
-      api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-        key_content: ENV["APP_STORE_CONNECT_KEY_CONTENT"],
-        key_filepath: ENV["APP_STORE_CONNECT_KEY_FILEPATH"]
-      )
-      match(type: "adhoc", api_key: api_key)
-    else
-      # Fallback to username/password for local development
-      match(type: "adhoc")
-    end
+    # Use Match in readonly mode - downloads certificates from git
+    match(
+      type: "adhoc",
+      readonly: true  # Only download from git, don't sync with Apple
+    )
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "FastlaneApp.xcodeproj",

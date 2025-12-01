@@ -158,6 +158,18 @@ jobs:
         env:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
+      - name: Setup CI environment for code signing
+        run: |
+          echo "🔧 Setting up CI environment for code signing..."
+          # Ensure provisioning profiles directory exists
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "✅ Provisioning profiles directory ready"
+          
+          # Set CI environment variable (Fastfile will detect this)
+          echo "CI=true" >> $GITHUB_ENV
+          echo "GITHUB_ACTIONS=true" >> $GITHUB_ENV
+          echo "✅ CI environment variables set"
+
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: build_upload

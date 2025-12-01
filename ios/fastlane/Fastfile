@@ -62,16 +62,42 @@ platform :ios do
     UI.message "Scheme: FastlaneApp"
     UI.message "Export method: app-store"
     
-    build_app(
+    # In CI, we need to use export_options with provisioning profile
+    # because automatic signing doesn't work without Apple account in Xcode
+    is_ci = ENV["CI"] == "true" || ENV["GITHUB_ACTIONS"] == "true"
+    
+    build_params = {
       workspace: "FastlaneApp.xcworkspace",
       scheme: "FastlaneApp",
       export_method: "app-store",
-      disable_xcpretty: true,  # Disable to see full error output
+      disable_xcpretty: true,
       output_directory: "./build",
       build_path: "./build",
-      buildlog_path: "./build_logs",  # Save build logs for debugging
-      xcargs: "-allowProvisioningUpdates" # Allow Xcode to update provisioning profiles
-    )
+      buildlog_path: "./build_logs",
+      xcargs: "-allowProvisioningUpdates"
+    }
+    
+    # In CI, add export_options with provisioning profile from Match
+    if is_ci
+      provisioning_profile_mapping = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
+      provisioning_profile_name = provisioning_profile_mapping["com.fastlaneApp.app"] if provisioning_profile_mapping
+      
+      if provisioning_profile_name
+        UI.message "🔧 CI detected - Using manual signing with profile: #{provisioning_profile_name}"
+        build_params[:export_options] = {
+          method: "app-store",
+          teamID: "SWDT88G8UG",
+          signingStyle: "manual",
+          provisioningProfiles: {
+            "com.fastlaneApp.app" => provisioning_profile_name
+          }
+        }
+      else
+        UI.important "⚠️  CI detected but no provisioning profile from Match - using automatic"
+      end
+    end
+    
+    build_app(build_params)
     
     # Get the IPA path from lane context (set by build_app)
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]

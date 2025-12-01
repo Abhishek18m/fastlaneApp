@@ -33,11 +33,28 @@ platform :ios do
       type: "appstore",
       readonly: true  # Only download from git, don't sync with Apple
     )
-    update_code_signing_settings(
-      use_automatic_signing: true,
-      path: "FastlaneApp.xcodeproj",
-      team_id: "SWDT88G8UG"
-    )
+    
+    # Detect CI environment - in CI we must use manual signing
+    is_ci = ENV["CI"] == "true" || ENV["GITHUB_ACTIONS"] == "true"
+    
+    if is_ci
+      UI.message "🔧 CI environment detected - Using manual signing"
+      # In CI, use manual signing (automatic signing requires Apple account in Xcode)
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "FastlaneApp.xcodeproj",
+        team_id: "SWDT88G8UG",
+        code_sign_identity: "Apple Distribution"
+      )
+    else
+      UI.message "💻 Local environment - Using automatic signing"
+      # Local builds can use automatic signing
+      update_code_signing_settings(
+        use_automatic_signing: true,
+        path: "FastlaneApp.xcodeproj",
+        team_id: "SWDT88G8UG"
+      )
+    end
     
     # Get current build number and increment it
     # If build 7 already exists in TestFlight, this will set it to 8
@@ -62,10 +79,6 @@ platform :ios do
     UI.message "Scheme: FastlaneApp"
     UI.message "Export method: app-store"
     
-    # In CI, we need to use export_options with provisioning profile
-    # because automatic signing doesn't work without Apple account in Xcode
-    is_ci = ENV["CI"] == "true" || ENV["GITHUB_ACTIONS"] == "true"
-    
     build_params = {
       workspace: "FastlaneApp.xcworkspace",
       scheme: "FastlaneApp",
@@ -77,13 +90,13 @@ platform :ios do
       xcargs: "-allowProvisioningUpdates"
     }
     
-    # In CI, add export_options with provisioning profile from Match
+    # In CI, add export_options with provisioning profile from Match for manual signing
     if is_ci
       provisioning_profile_mapping = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
       provisioning_profile_name = provisioning_profile_mapping["com.fastlaneApp.app"] if provisioning_profile_mapping
       
       if provisioning_profile_name
-        UI.message "🔧 CI detected - Using manual signing with profile: #{provisioning_profile_name}"
+        UI.message "✅ Using provisioning profile: #{provisioning_profile_name}"
         build_params[:export_options] = {
           method: "app-store",
           teamID: "SWDT88G8UG",
@@ -93,7 +106,7 @@ platform :ios do
           }
         }
       else
-        UI.important "⚠️  CI detected but no provisioning profile from Match - using automatic"
+        UI.user_error!("❌ CI environment but no provisioning profile found from Match!")
       end
     end
     

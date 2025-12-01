@@ -89,12 +89,12 @@ jobs:
             echo "❌ ERROR: Node.js not found at $NODE_PATH"
             exit 1
           fi
-          
+
           if [ ! -x "$NODE_PATH" ]; then
             echo "❌ ERROR: Node.js at $NODE_PATH is not executable"
             exit 1
           fi
-          
+
           echo "✅ Found Node.js at: $NODE_PATH"
           $NODE_PATH --version || {
             echo "❌ ERROR: Node.js execution failed"
@@ -201,7 +201,7 @@ jobs:
           # Ensure provisioning profiles directory exists
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "✅ Provisioning profiles directory ready"
-          
+
           # Set CI environment variable (Fastfile will detect this)
           echo "CI=true" >> $GITHUB_ENV
           echo "GITHUB_ACTIONS=true" >> $GITHUB_ENV
@@ -210,86 +210,82 @@ jobs:
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: build_upload
-        timeout-minutes: 45  # Prevent infinite hangs
+        timeout-minutes: 45 # Prevent infinite hangs
         run: |
           cd ios
 
-          # Critical: Verify .xcode.env.local exists and is correct before build
-          echo "🔍 Verifying .xcode.env.local before build:"
-          if [ ! -f ".xcode.env.local" ]; then
-            echo "❌ ERROR: .xcode.env.local not found! Creating it now..."
-            NODE_PATH=$(which node)
-            if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
-              echo "❌ ERROR: Node.js not found in PATH"
-              exit 1
-            fi
-            echo "export NODE_BINARY=$NODE_PATH" > .xcode.env.local
-            echo "✅ Created .xcode.env.local"
+          # CRITICAL: Ensure .xcode.env.local exists with correct Node.js path
+          echo "🔍 Setting up .xcode.env.local..."
+          NODE_PATH=$(which node)
+          if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
+            echo "❌ ERROR: Node.js not found in PATH"
+            which node || echo "node command not found"
+            exit 1
           fi
-          
+
+          # Create/update .xcode.env.local
+          echo "export NODE_BINARY=$NODE_PATH" > .xcode.env.local
+          echo "✅ Created .xcode.env.local with NODE_BINARY=$NODE_PATH"
+
+          # Verify it's correct
           echo "📝 .xcode.env.local contents:"
           cat .xcode.env.local
-          
+
           # Source and verify NODE_BINARY
           source .xcode.env.local
           if [ -z "$NODE_BINARY" ]; then
             echo "❌ ERROR: NODE_BINARY not set in .xcode.env.local!"
             exit 1
           fi
-          
+
           echo "✅ NODE_BINARY is set to: $NODE_BINARY"
-          
+
           # Verify Node.js is accessible and executable
           if [ ! -f "$NODE_BINARY" ]; then
             echo "❌ ERROR: Node.js file not found at $NODE_BINARY"
             exit 1
           fi
-          
+
           if [ ! -x "$NODE_BINARY" ]; then
             echo "❌ ERROR: Node.js not executable at $NODE_BINARY"
             exit 1
           fi
-          
+
           # Test Node.js execution
           echo "🧪 Testing Node.js execution:"
           $NODE_BINARY --version || {
             echo "❌ ERROR: Node.js execution failed!"
             exit 1
           }
-          
+
           echo "✅ Node.js is accessible and working"
 
           # Set environment variables for better error visibility
           export FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT=120
           export FASTLANE_XCODEBUILD_SETTINGS_RETRIES=2
-          
+
           # Also export NODE_BINARY to environment so Xcode scripts can access it
           export NODE_BINARY
-          
+
           # Set REACT_NATIVE_PATH explicitly (required by React Native bundling script)
           if [ -d "../node_modules/react-native" ]; then
             export REACT_NATIVE_PATH="$(cd ../node_modules/react-native && pwd)"
             echo "✅ REACT_NATIVE_PATH set to: $REACT_NATIVE_PATH"
           else
-            echo "⚠️  WARNING: node_modules/react-native not found, REACT_NATIVE_PATH not set"
+            echo "❌ ERROR: node_modules/react-native not found!"
+            exit 1
           fi
-          
-          # Skip network operations in CI to prevent hangs
-          export CI=true
-          export SKIP_BUNDLING=false
-          
+
           # Verify React Native scripts exist
-          if [ -n "$REACT_NATIVE_PATH" ]; then
-            if [ ! -f "$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh" ]; then
-              echo "❌ ERROR: React Native with-environment.sh not found at $REACT_NATIVE_PATH/scripts/xcode/"
-              exit 1
-            fi
-            if [ ! -f "$REACT_NATIVE_PATH/scripts/react-native-xcode.sh" ]; then
-              echo "❌ ERROR: React Native react-native-xcode.sh not found at $REACT_NATIVE_PATH/scripts/"
-              exit 1
-            fi
-            echo "✅ React Native scripts found"
+          if [ ! -f "$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh" ]; then
+            echo "❌ ERROR: React Native with-environment.sh not found at $REACT_NATIVE_PATH/scripts/xcode/"
+            exit 1
           fi
+          if [ ! -f "$REACT_NATIVE_PATH/scripts/react-native-xcode.sh" ]; then
+            echo "❌ ERROR: React Native react-native-xcode.sh not found at $REACT_NATIVE_PATH/scripts/"
+            exit 1
+          fi
+          echo "✅ React Native scripts found"
 
           bundle exec fastlane beta || {
             echo ""

@@ -113,6 +113,7 @@ platform :ios do
       
       # Ensure NODE_BINARY is set from .xcode.env.local
       xcode_env_local = File.expand_path(".xcode.env.local", __dir__)
+      node_binary = nil
       if File.exist?(xcode_env_local)
         env_content = File.read(xcode_env_local)
         if env_content =~ /NODE_BINARY=(.+)/
@@ -121,6 +122,21 @@ platform :ios do
           UI.message "✅ NODE_BINARY set to: #{node_binary}"
         end
       end
+      
+      # CRITICAL: Pass environment variables to xcodebuild via xcargs
+      # This ensures Xcode scripts can access them during build
+      xcargs_parts = ["-allowProvisioningUpdates"]
+      
+      if react_native_path && Dir.exist?(react_native_path)
+        xcargs_parts << "REACT_NATIVE_PATH=#{react_native_path}"
+      end
+      
+      if node_binary && File.exist?(node_binary)
+        xcargs_parts << "NODE_BINARY=#{node_binary}"
+      end
+      
+      build_params[:xcargs] = xcargs_parts.join(" ")
+      UI.message "🔧 xcargs: #{build_params[:xcargs]}"
     end
     
     # In CI, add export_options with provisioning profile from Match for export phase

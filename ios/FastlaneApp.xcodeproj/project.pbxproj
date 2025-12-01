@@ -283,7 +283,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.fastlaneApp.app;
 				PRODUCT_NAME = FastlaneApp;
@@ -313,7 +312,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.fastlaneApp.app;
 				PRODUCT_NAME = FastlaneApp;

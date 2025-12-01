@@ -15,6 +15,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
+### ios create_app
+
+```sh
+[bundle exec] fastlane ios create_app
+```
+
+Create app in App Store Connect (if it doesn't exist)
+
 ### ios beta
 
 ```sh

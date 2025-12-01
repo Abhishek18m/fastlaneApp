@@ -1,6 +1,30 @@
 default_platform(:ios)
 
 platform :ios do
+  desc "Create app in App Store Connect (if it doesn't exist)"
+  lane :create_app do
+    app_identifier = "com.fastlaneApp.app"
+    app_name = "FastlaneApp"
+    
+    begin
+      produce(
+        app_identifier: app_identifier,
+        app_name: app_name,
+        language: "English",
+        app_version: "1.0",
+        sku: "fastlane-app-#{Time.now.to_i}",
+        team_id: "SWDT88G8UG"
+      )
+      UI.success "✅ App created successfully in App Store Connect!"
+    rescue => ex
+      if ex.message.include?("already exists")
+        UI.success "✅ App already exists in App Store Connect"
+      else
+        UI.user_error!("❌ Failed to create app: #{ex.message}")
+      end
+    end
+  end
+
   desc "Push a new beta build to TestFlight"
   lane :beta do
     # Use Match in readonly mode - downloads certificates from git without Apple authentication
@@ -78,9 +102,17 @@ platform :ios do
     end
     
     # Upload to TestFlight using App-Specific Password
+    # Explicitly specify app identifier and username to avoid lookup issues
+    UI.message "🔐 Authenticating with App Store Connect..."
+    UI.message "📱 App Identifier: com.fastlaneApp.app"
+    UI.message "👤 Apple ID: appledeveloper@ditstek.com"
+    UI.message "🏢 ITC Team ID: 122953061"
+    
     begin
       upload_to_testflight(
         ipa: ipa_path,
+        app_identifier: "com.fastlaneApp.app",  # Explicitly specify app
+        username: "appledeveloper@ditstek.com",  # Explicitly specify username
         skip_waiting_for_build_processing: true,
         skip_submission: true,
         distribute_external: false,
@@ -88,7 +120,29 @@ platform :ios do
       )
       UI.success "✅ Upload command completed"
     rescue => ex
-      UI.user_error!("❌ Upload failed: #{ex.message}")
+      error_msg = ex.message.to_s
+      
+      if error_msg.include?("Couldn't find app") || error_msg.include?("not found")
+        UI.important "⚠️  App lookup failed. This might be an authentication or permissions issue."
+        UI.message ""
+        UI.message "🔍 Troubleshooting steps:"
+        UI.message "1. Verify the app exists: https://appstoreconnect.apple.com/apps"
+        UI.message "2. Check that 'appledeveloper@ditstek.com' has access to the app"
+        UI.message "3. Verify your app-specific password is correct"
+        UI.message "4. Try using App Store Connect API Key instead (more reliable)"
+        UI.message ""
+        UI.user_error!("❌ Upload failed: #{error_msg}")
+      elsif error_msg.include?("Unauthorized") || error_msg.include?("Authentication")
+        UI.user_error!("❌ Authentication failed!\n\n" \
+          "💡 Check your app-specific password:\n" \
+          "1. Go to: https://appleid.apple.com/account/manage\n" \
+          "2. Verify the app-specific password is correct\n" \
+          "3. Make sure it has no spaces or special characters\n" \
+          "4. Regenerate if needed\n\n" \
+          "Error: #{error_msg}")
+      else
+        UI.user_error!("❌ Upload failed: #{error_msg}")
+      end
     end
     
     # Verify the upload was successful by checking if we can query the build

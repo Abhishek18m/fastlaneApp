@@ -11,10 +11,15 @@ on:
 
 jobs:
   ios:
-    runs-on: macos-latest
+    runs-on: macos-14 # Use macOS 14 for more stable Xcode version
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: actions/setup-xcode@v4
+        with:
+          xcode-version: '15.4' # Use stable Xcode 15.4
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1

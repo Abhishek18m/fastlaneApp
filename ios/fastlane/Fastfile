@@ -19,7 +19,9 @@ platform :ios do
       workspace: "FastlaneApp.xcworkspace",
       scheme: "FastlaneApp",
       export_method: "app-store",
-      disable_xcpretty: true
+      disable_xcpretty: true,
+      verbose: true,
+      buildlog_path: "./build_logs"
     )
     # Upload to TestFlight using App-Specific Password (no API Key needed)
     upload_to_testflight(

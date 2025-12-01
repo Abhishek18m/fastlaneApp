@@ -34,37 +34,58 @@ jobs:
         run: |
           # Get Node.js path - actions/setup-node adds it to PATH
           # Use 'which node' to get the absolute path
-          NODE_PATH=$(which node)
+          NODE_PATH=$(which node 2>/dev/null)
 
           if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
-            echo "❌ ERROR: Node.js not found in PATH"
-            echo "Trying to find node in common locations..."
+            echo "⚠️  Node.js not found in PATH, searching common locations..."
             
-            # Try common GitHub Actions locations
-            if [ -f "$HOME/.nvm/versions/node/v20/bin/node" ]; then
-              NODE_PATH="$HOME/.nvm/versions/node/v20/bin/node"
-            elif [ -f "/usr/local/bin/node" ]; then
-              NODE_PATH="/usr/local/bin/node"
-            elif [ -f "/opt/homebrew/bin/node" ]; then
-              NODE_PATH="/opt/homebrew/bin/node"
-            else
+            # Try GitHub Actions hosted toolcache (most common in CI)
+            if [ -d "/Users/runner/hostedtoolcache/node" ]; then
+              NODE_PATH=$(find /Users/runner/hostedtoolcache/node -name node -type f -executable 2>/dev/null | head -1)
+              if [ -n "$NODE_PATH" ] && [ -f "$NODE_PATH" ]; then
+                echo "✅ Found Node.js in hostedtoolcache: $NODE_PATH"
+              fi
+            fi
+            
+            # Try other common locations if still not found
+            if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
+              if [ -f "$HOME/.nvm/versions/node/v20/bin/node" ]; then
+                NODE_PATH="$HOME/.nvm/versions/node/v20/bin/node"
+              elif [ -f "/usr/local/bin/node" ]; then
+                NODE_PATH="/usr/local/bin/node"
+              elif [ -f "/opt/homebrew/bin/node" ]; then
+                NODE_PATH="/opt/homebrew/bin/node"
+              fi
+            fi
+            
+            if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
               echo "❌ ERROR: Could not find Node.js. Please check Node.js setup."
+              echo "Searched in:"
+              echo "  - PATH"
+              echo "  - /Users/runner/hostedtoolcache/node"
+              echo "  - $HOME/.nvm/versions/node/v20/bin"
+              echo "  - /usr/local/bin"
+              echo "  - /opt/homebrew/bin"
               exit 1
             fi
           fi
 
           # Verify node exists and is executable
-          if [ -f "$NODE_PATH" ]; then
-            echo "✅ Found Node.js at: $NODE_PATH"
-            $NODE_PATH --version
-            if [ $? -ne 0 ]; then
-              echo "❌ ERROR: Node.js at $NODE_PATH is not executable"
-              exit 1
-            fi
-          else
+          if [ ! -f "$NODE_PATH" ]; then
             echo "❌ ERROR: Node.js not found at $NODE_PATH"
             exit 1
           fi
+          
+          if [ ! -x "$NODE_PATH" ]; then
+            echo "❌ ERROR: Node.js at $NODE_PATH is not executable"
+            exit 1
+          fi
+          
+          echo "✅ Found Node.js at: $NODE_PATH"
+          $NODE_PATH --version || {
+            echo "❌ ERROR: Node.js execution failed"
+            exit 1
+          }
 
           # Create .xcode.env.local file (this will be sourced by Xcode build script)
           # The format should be: export NODE_BINARY=/path/to/node
@@ -80,10 +101,12 @@ jobs:
           source ios/.xcode.env.local
           if [ -n "$NODE_BINARY" ]; then
             echo "✅ NODE_BINARY is set to: $NODE_BINARY"
-            if [ -f "$NODE_BINARY" ]; then
-              echo "✅ Node.js file exists and is accessible"
+            if [ -f "$NODE_BINARY" ] && [ -x "$NODE_BINARY" ]; then
+              echo "✅ Node.js file exists and is executable"
+              $NODE_BINARY --version || echo "⚠️  Warning: Could not verify node version"
             else
-              echo "⚠️  WARNING: Node.js file not found at $NODE_BINARY (may be in PATH)"
+              echo "❌ ERROR: Node.js file not accessible or not executable at $NODE_BINARY"
+              exit 1
             fi
           else
             echo "❌ ERROR: NODE_BINARY not set after sourcing .xcode.env.local"
@@ -173,20 +196,61 @@ jobs:
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: build_upload
+        timeout-minutes: 45  # Prevent infinite hangs
         run: |
           cd ios
 
-          # Verify Node.js setup one more time before building
-          echo "🔍 Final Node.js verification before build:"
-          if [ -f ".xcode.env.local" ]; then
-            source .xcode.env.local
-            echo "NODE_BINARY=$NODE_BINARY"
-            $NODE_BINARY --version || "$NODE_BINARY" --version || echo "⚠️  Could not verify node version"
+          # Critical: Verify .xcode.env.local exists and is correct before build
+          echo "🔍 Verifying .xcode.env.local before build:"
+          if [ ! -f ".xcode.env.local" ]; then
+            echo "❌ ERROR: .xcode.env.local not found! Creating it now..."
+            NODE_PATH=$(which node)
+            if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
+              echo "❌ ERROR: Node.js not found in PATH"
+              exit 1
+            fi
+            echo "export NODE_BINARY=$NODE_PATH" > .xcode.env.local
+            echo "✅ Created .xcode.env.local"
           fi
+          
+          echo "📝 .xcode.env.local contents:"
+          cat .xcode.env.local
+          
+          # Source and verify NODE_BINARY
+          source .xcode.env.local
+          if [ -z "$NODE_BINARY" ]; then
+            echo "❌ ERROR: NODE_BINARY not set in .xcode.env.local!"
+            exit 1
+          fi
+          
+          echo "✅ NODE_BINARY is set to: $NODE_BINARY"
+          
+          # Verify Node.js is accessible and executable
+          if [ ! -f "$NODE_BINARY" ]; then
+            echo "❌ ERROR: Node.js file not found at $NODE_BINARY"
+            exit 1
+          fi
+          
+          if [ ! -x "$NODE_BINARY" ]; then
+            echo "❌ ERROR: Node.js not executable at $NODE_BINARY"
+            exit 1
+          fi
+          
+          # Test Node.js execution
+          echo "🧪 Testing Node.js execution:"
+          $NODE_BINARY --version || {
+            echo "❌ ERROR: Node.js execution failed!"
+            exit 1
+          }
+          
+          echo "✅ Node.js is accessible and working"
 
           # Set environment variables for better error visibility
           export FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT=120
           export FASTLANE_XCODEBUILD_SETTINGS_RETRIES=2
+          
+          # Also export NODE_BINARY to environment so Xcode scripts can access it
+          export NODE_BINARY
 
           bundle exec fastlane beta || {
             echo ""

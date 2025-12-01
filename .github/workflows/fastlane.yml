@@ -32,11 +32,63 @@ jobs:
 
       - name: Setup Node path for Xcode
         run: |
-          # Create .xcode.env.local with Node path for CI
+          # Get Node.js path - actions/setup-node adds it to PATH
+          # Use 'which node' to get the absolute path
           NODE_PATH=$(which node)
-          echo "NODE_BINARY=$NODE_PATH" > ios/.xcode.env.local
-          echo "Created .xcode.env.local with NODE_BINARY=$NODE_PATH"
+
+          if [ -z "$NODE_PATH" ] || [ ! -f "$NODE_PATH" ]; then
+            echo "❌ ERROR: Node.js not found in PATH"
+            echo "Trying to find node in common locations..."
+            
+            # Try common GitHub Actions locations
+            if [ -f "$HOME/.nvm/versions/node/v20/bin/node" ]; then
+              NODE_PATH="$HOME/.nvm/versions/node/v20/bin/node"
+            elif [ -f "/usr/local/bin/node" ]; then
+              NODE_PATH="/usr/local/bin/node"
+            elif [ -f "/opt/homebrew/bin/node" ]; then
+              NODE_PATH="/opt/homebrew/bin/node"
+            else
+              echo "❌ ERROR: Could not find Node.js. Please check Node.js setup."
+              exit 1
+            fi
+          fi
+
+          # Verify node exists and is executable
+          if [ -f "$NODE_PATH" ]; then
+            echo "✅ Found Node.js at: $NODE_PATH"
+            $NODE_PATH --version
+            if [ $? -ne 0 ]; then
+              echo "❌ ERROR: Node.js at $NODE_PATH is not executable"
+              exit 1
+            fi
+          else
+            echo "❌ ERROR: Node.js not found at $NODE_PATH"
+            exit 1
+          fi
+
+          # Create .xcode.env.local file (this will be sourced by Xcode build script)
+          # The format should be: export NODE_BINARY=/path/to/node
+          echo "export NODE_BINARY=$NODE_PATH" > ios/.xcode.env.local
+
+          echo ""
+          echo "📝 Created ios/.xcode.env.local:"
           cat ios/.xcode.env.local
+
+          # Verify the file can be sourced correctly
+          echo ""
+          echo "🔍 Verifying .xcode.env.local can be sourced:"
+          source ios/.xcode.env.local
+          if [ -n "$NODE_BINARY" ]; then
+            echo "✅ NODE_BINARY is set to: $NODE_BINARY"
+            if [ -f "$NODE_BINARY" ]; then
+              echo "✅ Node.js file exists and is accessible"
+            else
+              echo "⚠️  WARNING: Node.js file not found at $NODE_BINARY (may be in PATH)"
+            fi
+          else
+            echo "❌ ERROR: NODE_BINARY not set after sourcing .xcode.env.local"
+            exit 1
+          fi
 
       - name: Install CocoaPods dependencies
         run: |
@@ -67,6 +119,30 @@ jobs:
           xcodebuild -showsdks
           echo "Xcode path: $(xcode-select -p)"
 
+      - name: Verify Node.js setup for Xcode
+        run: |
+          echo "🔍 Verifying Node.js setup before build..."
+          if [ -f "ios/.xcode.env.local" ]; then
+            echo "✅ .xcode.env.local exists"
+            cat ios/.xcode.env.local
+            source ios/.xcode.env.local
+            if [ -n "$NODE_BINARY" ]; then
+              echo "✅ NODE_BINARY is set to: $NODE_BINARY"
+              if [ -f "$NODE_BINARY" ] || command -v "$NODE_BINARY" > /dev/null 2>&1; then
+                $NODE_BINARY --version || "$NODE_BINARY" --version
+                echo "✅ Node.js is accessible"
+              else
+                echo "❌ ERROR: Node.js not found at $NODE_BINARY"
+                exit 1
+              fi
+            else
+              echo "❌ ERROR: NODE_BINARY not set in .xcode.env.local"
+              exit 1
+            fi
+          else
+            echo "⚠️  WARNING: .xcode.env.local not found, Xcode will try to find node automatically"
+          fi
+
       - name: Configure Git for Match (Project-specific)
         run: |
           if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
@@ -87,10 +163,39 @@ jobs:
         id: build_upload
         run: |
           cd ios
+
+          # Verify Node.js setup one more time before building
+          echo "🔍 Final Node.js verification before build:"
+          if [ -f ".xcode.env.local" ]; then
+            source .xcode.env.local
+            echo "NODE_BINARY=$NODE_BINARY"
+            $NODE_BINARY --version || "$NODE_BINARY" --version || echo "⚠️  Could not verify node version"
+          fi
+
+          # Set environment variables for better error visibility
+          export FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT=120
+          export FASTLANE_XCODEBUILD_SETTINGS_RETRIES=2
+
           bundle exec fastlane beta || {
-            echo "Build failed. Showing build logs:"
-            if [ -d "./build_logs" ]; then
-              find ./build_logs -name "*.log" -exec tail -100 {} \;
+            echo ""
+            echo "❌ Build failed. Debugging information:"
+            echo ""
+            echo "📁 Checking .xcode.env.local:"
+            if [ -f ".xcode.env.local" ]; then
+              cat .xcode.env.local
+              source .xcode.env.local
+              echo "NODE_BINARY=$NODE_BINARY"
+            else
+              echo "⚠️  .xcode.env.local not found!"
+            fi
+            echo ""
+            echo "🔍 Node.js verification:"
+            which node || echo "node not in PATH"
+            node --version || echo "node command failed"
+            echo ""
+            echo "📋 Recent build logs:"
+            if [ -d "./build" ]; then
+              find ./build -name "*.log" -type f -exec tail -50 {} \; 2>/dev/null || echo "No log files found"
             fi
             exit 1
           }

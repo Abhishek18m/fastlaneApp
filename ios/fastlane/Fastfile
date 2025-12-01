@@ -39,7 +39,8 @@ platform :ios do
       export_method: "app-store",
       disable_xcpretty: true,  # Disable to see full error output
       output_directory: "./build",
-      build_path: "./build"
+      build_path: "./build",
+      xcargs: "-allowProvisioningUpdates" # Allow Xcode to update provisioning profiles
     )
     # Upload to TestFlight using App-Specific Password (no API Key needed)
     upload_to_testflight(

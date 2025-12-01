@@ -33,6 +33,11 @@ platform :ios do
       build_number: new_build
     )
     
+    # Show what we're about to build
+    UI.message "Building with workspace: FastlaneApp.xcworkspace"
+    UI.message "Scheme: FastlaneApp"
+    UI.message "Export method: app-store"
+    
     build_app(
       workspace: "FastlaneApp.xcworkspace",
       scheme: "FastlaneApp",
@@ -40,6 +45,7 @@ platform :ios do
       disable_xcpretty: true,  # Disable to see full error output
       output_directory: "./build",
       build_path: "./build",
+      buildlog_path: "./build_logs",  # Save build logs for debugging
       xcargs: "-allowProvisioningUpdates" # Allow Xcode to update provisioning profiles
     )
     # Upload to TestFlight using App-Specific Password (no API Key needed)

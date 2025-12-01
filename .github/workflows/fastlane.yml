@@ -193,10 +193,57 @@ jobs:
             which node || echo "node not in PATH"
             node --version || echo "node command failed"
             echo ""
-            echo "📋 Recent build logs:"
-            if [ -d "./build" ]; then
-              find ./build -name "*.log" -type f -exec tail -50 {} \; 2>/dev/null || echo "No log files found"
+            echo "📋 Checking build logs directory:"
+            if [ -d "./build_logs" ]; then
+              echo "Found build_logs directory, searching for error messages:"
+              find ./build_logs -type f -name "*.log" -exec grep -l -i "error\|failed\|fatal" {} \; | head -5 | while read logfile; do
+                echo ""
+                echo "=== Errors in $logfile ==="
+                grep -i "error\|failed\|fatal" "$logfile" | tail -20
+              done
+              echo ""
+              echo "=== Last 100 lines of most recent log ==="
+              find ./build_logs -type f -name "*.log" -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2- | xargs tail -100 2>/dev/null || echo "Could not read log file"
+            else
+              echo "⚠️  build_logs directory not found"
             fi
+            echo ""
+            echo "📋 Checking build directory:"
+            if [ -d "./build" ]; then
+              echo "Build directory contents:"
+              ls -la ./build/ 2>/dev/null || echo "Could not list build directory"
+              find ./build -name "*.log" -type f -exec tail -50 {} \; 2>/dev/null | head -200 || echo "No log files found in build directory"
+            else
+              echo "⚠️  build directory not found"
+            fi
+            echo ""
+            echo "🔍 Checking DerivedData for detailed errors:"
+            DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
+            if [ -d "$DERIVED_DATA" ]; then
+              echo "Searching for FastlaneApp in DerivedData..."
+              find "$DERIVED_DATA" -name "*FastlaneApp*" -type d | head -3 | while read dd_path; do
+                echo ""
+                echo "=== Checking $dd_path ==="
+                # Look for log files
+                find "$dd_path" -name "*.log" -type f | head -3 | while read logfile; do
+                  echo "Errors in $(basename $logfile):"
+                  grep -i "error\|failed\|fatal" "$logfile" | tail -10 || echo "No errors found"
+                done
+                # Look for build errors in text files
+                find "$dd_path" -name "*.txt" -o -name "*error*" | head -5 | while read errfile; do
+                  if [ -f "$errfile" ] && [ -s "$errfile" ]; then
+                    echo ""
+                    echo "=== $(basename $errfile) ==="
+                    tail -30 "$errfile"
+                  fi
+                done
+              done
+            else
+              echo "DerivedData directory not found at $DERIVED_DATA"
+            fi
+            echo ""
+            echo "🔍 Checking for xcodebuild errors in output:"
+            echo "Look above for lines containing 'error:', 'failed:', or 'fatal:'"
             exit 1
           }
 

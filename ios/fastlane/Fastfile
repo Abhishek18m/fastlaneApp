@@ -48,11 +48,84 @@ platform :ios do
       buildlog_path: "./build_logs",  # Save build logs for debugging
       xcargs: "-allowProvisioningUpdates" # Allow Xcode to update provisioning profiles
     )
-    # Upload to TestFlight using App-Specific Password (no API Key needed)
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true,
-      skip_submission: true
-    )
+    
+    # Get the IPA path from lane context (set by build_app)
+    ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
+    
+    # Fallback to relative path if lane context doesn't have it
+    if ipa_path.nil? || !File.exist?(ipa_path)
+      ipa_path = "./build/FastlaneApp.ipa"
+    end
+    
+    # Verify IPA file exists before uploading
+    unless File.exist?(ipa_path)
+      UI.user_error!("❌ IPA file not found at #{ipa_path}. Build may have failed.")
+    end
+    
+    file_size = File.size(ipa_path)
+    UI.message "📦 IPA file found: #{ipa_path} (#{(file_size / 1024 / 1024).round(2)} MB)"
+    
+    # Check app-specific password format
+    if ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"]
+      password = ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"]
+      if password.include?("{") || password.include?("}") || password.include?(" ")
+        UI.important "⚠️  WARNING: App-specific password may contain invalid characters!"
+        UI.message "💡 App-specific passwords should be a single string without spaces or special characters"
+        UI.message "💡 Check your GitHub secret: FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"
+      end
+    else
+      UI.important "⚠️  WARNING: FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD not set!"
+    end
+    
+    # Upload to TestFlight using App-Specific Password
+    begin
+      upload_to_testflight(
+        ipa: ipa_path,
+        skip_waiting_for_build_processing: true,
+        skip_submission: true,
+        distribute_external: false,
+        notify_external_testers: false
+      )
+      UI.success "✅ Upload command completed"
+    rescue => ex
+      UI.user_error!("❌ Upload failed: #{ex.message}")
+    end
+    
+    # Verify the upload was successful by checking if we can query the build
+    UI.message "🔍 Verifying upload..."
+    current_build = get_build_number(xcodeproj: "FastlaneApp.xcodeproj")
+    
+    begin
+      # Wait a moment for the build to appear in the system
+      sleep(10)
+      
+      # Try to get the latest build number to verify upload
+      latest_build = latest_testflight_build_number(
+        app_identifier: "com.fastlaneApp.app",
+        initial_wait_time: 15,
+        wait_timeout: 90
+      )
+      
+      UI.success "✅ Build #{current_build} uploaded successfully!"
+      UI.message "📱 Latest build in TestFlight: #{latest_build}"
+      
+      if latest_build.to_i >= current_build.to_i
+        UI.success "✅ Your build (#{current_build}) is confirmed in TestFlight!"
+      else
+        UI.important "⏳ Build #{current_build} is still processing. It may take 5-30 minutes to appear."
+        UI.message "💡 Check App Store Connect: https://appstoreconnect.apple.com/apps"
+      end
+    rescue => ex
+      UI.important "⚠️  Could not verify build status: #{ex.message}"
+      UI.message ""
+      UI.message "📋 Troubleshooting steps:"
+      UI.message "1. Check App Store Connect Activity tab for upload history"
+      UI.message "2. Verify your app-specific password is correct (no spaces/special chars)"
+      UI.message "3. Check your email for any processing errors from Apple"
+      UI.message "4. Wait 10-30 minutes and check TestFlight again"
+      UI.message ""
+      UI.message "💡 Direct link: https://appstoreconnect.apple.com/apps"
+    end
   end
 
   desc "Build the IPA (without uploading)"

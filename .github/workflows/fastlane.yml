@@ -40,15 +40,14 @@ jobs:
           cd ios
           bundle install
 
-      - name: Configure Git for Match
+      - name: Configure Git for Match (Project-specific)
         run: |
           if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
             echo "MATCH_GIT_BASIC_AUTHORIZATION is set (length: ${#MATCH_GIT_BASIC_AUTHORIZATION})"
             DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
-            echo "https://${DECODED_AUTH}@github.com" > ~/.git-credentials
-            git config --global credential.helper store
-            git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
-            echo "Git credentials configured successfully"
+            # Configure URL rewrite only for the specific repository
+            git config --global url."https://${DECODED_AUTH}@github.com/Abhishek18m/fastlaneApp.git".insteadOf "https://github.com/Abhishek18m/fastlaneApp.git"
+            echo "Git credentials configured for this project only"
           else
             echo "ERROR: MATCH_GIT_BASIC_AUTHORIZATION is not set. Please add it to GitHub Secrets."
             exit 1
@@ -67,15 +66,14 @@ jobs:
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
-      - name: Configure Git for Match (PRs)
+      - name: Configure Git for Match (PRs - Project-specific)
         if: github.event_name == 'pull_request'
         run: |
           if [ -n "$MATCH_GIT_BASIC_AUTHORIZATION" ]; then
             DECODED_AUTH=$(echo "$MATCH_GIT_BASIC_AUTHORIZATION" | base64 -d)
-            echo "https://${DECODED_AUTH}@github.com" > ~/.git-credentials
-            git config --global credential.helper store
-            git config --global url."https://${DECODED_AUTH}@github.com/".insteadOf "https://github.com/"
-            echo "Git credentials configured"
+            # Configure URL rewrite only for the specific repository
+            git config --global url."https://${DECODED_AUTH}@github.com/Abhishek18m/fastlaneApp.git".insteadOf "https://github.com/Abhishek18m/fastlaneApp.git"
+            echo "Git credentials configured for this project only"
           else
             echo "Warning: MATCH_GIT_BASIC_AUTHORIZATION not set"
           fi

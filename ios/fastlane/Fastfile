@@ -14,14 +14,32 @@ platform :ios do
       path: "FastlaneApp.xcodeproj",
       team_id: "SWDT88G8UG"
     )
-    increment_build_number(xcodeproj: "FastlaneApp.xcodeproj")
+    
+    # Get current build number and increment it
+    # If build 7 already exists in TestFlight, this will set it to 8
+    current_build = get_build_number(xcodeproj: "FastlaneApp.xcodeproj")
+    current_build_int = current_build.to_i
+    
+    # Ensure build number is at least 8 (since 7 already exists)
+    # Then increment from there
+    minimum_build = 8
+    new_build = [current_build_int + 1, minimum_build].max.to_s
+    
+    UI.message "Current build: #{current_build}, New build: #{new_build}"
+    
+    # Set the new build number
+    increment_build_number(
+      xcodeproj: "FastlaneApp.xcodeproj",
+      build_number: new_build
+    )
+    
     build_app(
       workspace: "FastlaneApp.xcworkspace",
       scheme: "FastlaneApp",
       export_method: "app-store",
-      disable_xcpretty: true,
-      verbose: true,
-      buildlog_path: "./build_logs"
+      disable_xcpretty: true,  # Disable to see full error output
+      output_directory: "./build",
+      build_path: "./build"
     )
     # Upload to TestFlight using App-Specific Password (no API Key needed)
     upload_to_testflight(

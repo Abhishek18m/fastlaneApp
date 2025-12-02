@@ -100,7 +100,7 @@ platform :ios do
       xcargs: "-allowProvisioningUpdates"
     }
     
-    # In CI, set environment variables for React Native bundling script
+    # In CI, set environment variables and add flags to prevent CocoaPods embed frameworks script from hanging
     if is_ci
       # Set REACT_NATIVE_PATH if not already set
       react_native_path = File.expand_path("../../node_modules/react-native", __dir__)
@@ -127,6 +127,7 @@ platform :ios do
       # This ensures Xcode scripts can access them during build
       xcargs_parts = ["-allowProvisioningUpdates"]
       
+      # Pass environment variables to xcodebuild
       if react_native_path && Dir.exist?(react_native_path)
         xcargs_parts << "REACT_NATIVE_PATH=#{react_native_path}"
       end
@@ -136,7 +137,9 @@ platform :ios do
       end
       
       build_params[:xcargs] = xcargs_parts.join(" ")
+      UI.message "🔧 CI: Added environment variables to xcargs"
       UI.message "🔧 xcargs: #{build_params[:xcargs]}"
+      UI.message "💡 Note: Code signing for frameworks is disabled in Podfile to prevent CocoaPods script hangs"
     end
     
     # In CI, add export_options with provisioning profile from Match for export phase

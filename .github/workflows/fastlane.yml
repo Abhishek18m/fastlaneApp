@@ -130,7 +130,11 @@ jobs:
       - name: Install CocoaPods dependencies
         run: |
           cd ios
+          # Set CI environment variable before pod install so Podfile can optimize
+          export CI=true
+          export GITHUB_ACTIONS=true
           pod install --repo-update
+          echo "✅ CocoaPods dependencies installed"
 
       - name: Install Fastlane dependencies
         run: |
@@ -210,7 +214,7 @@ jobs:
       - name: Build and Upload iOS
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: build_upload
-        timeout-minutes: 45 # Prevent infinite hangs
+        timeout-minutes: 60 # Increased timeout for CocoaPods script (should complete in 15-30 min)
         run: |
           cd ios
 
